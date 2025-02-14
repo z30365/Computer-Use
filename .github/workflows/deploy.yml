@@ -6,58 +6,101 @@ on:
   pull_request:
     branches: [ main ]
 
-jobs:
+env:
+  RESOURCE_GROUP: 'hub-rg'
 
-  deploy:
+jobs:
+  validate-and-deploy:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v2
-    
+    - uses: actions/checkout@v3
+      
+    - name: Azure CLI Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+        enable-AzPSSession: true
+        
+    - name: Install Azure CLI
+      run: |
+        curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+        
+    - name: Validate Azure Subscription
+      run: |
+        az account show --query id -o tsv
+        if [ $? -ne 0 ]; then
+          echo "Failed to validate Azure subscription"
+          exit 1
+        fi
+        
+    - name: Validate Resource Group
+      run: |
+        if ! az group show --name "$RESOURCE_GROUP" &>/dev/null; then
+          echo "Resource group $RESOURCE_GROUP not found"
+          exit 1
+        fi
+        
     - name: Deploy Hub VNet
       uses: azure/arm-deploy@v1
       with:
-        resourceGroupName: 'hub-rg'
-        template: 'hub-vnet.bicep'
+        resourceGroupName: ${{ env.RESOURCE_GROUP }}
+        template: './bicep/hub-vnet.bicep'
+        failOnStdErr: true
         
     - name: Deploy Spoke 1 VNet  
       uses: azure/arm-deploy@v1
       with:
-        resourceGroupName: 'spoke1-rg'
-        template: 'spoke1-vnet.bicep'
+        resourceGroupName: ${{ env.RESOURCE_GROUP }}
+        template: './bicep/spoke1-vnet.bicep'
+        failOnStdErr: true
         
     - name: Deploy Spoke 2 VNet
       uses: azure/arm-deploy@v1
       with:
-        resourceGroupName: 'spoke2-rg'
-        template: 'spoke2-vnet.bicep'
+        resourceGroupName: ${{ env.RESOURCE_GROUP }}
+        template: './bicep/spoke2-vnet.bicep'
+        failOnStdErr: true
         
     - name: Configure VNet Peering
       uses: azure/arm-deploy@v1
       with:
-        resourceGroupName: 'hub-rg'
-        template: 'vnet-peering.bicep'
+        resourceGroupName: ${{ env.RESOURCE_GROUP }}
+        template: './bicep/vnet-peering.bicep'
+        failOnStdErr: true
         
     - name: Deploy VPN Gateway
       uses: azure/arm-deploy@v1
       with:
-        resourceGroupName: 'hub-rg'
-        template: 'vpn-gateway.bicep'
+        resourceGroupName: ${{ env.RESOURCE_GROUP }}
+        template: './bicep/vpn-gateway.bicep'
+        failOnStdErr: true
         
     - name: Configure Azure Bastion
       uses: azure/arm-deploy@v1
       with:
-        resourceGroupName: 'hub-rg'
-        template: 'bastion.bicep'
+        resourceGroupName: ${{ env.RESOURCE_GROUP }}
+        template: './bicep/bastion.bicep'
+        failOnStdErr: true
         
     - name: Apply Network Security Groups
       uses: azure/arm-deploy@v1
       with:
-        resourceGroupName: 'hub-rg'
-        template: 'nsg.bicep'
+        resourceGroupName: ${{ env.RESOURCE_GROUP }}
+        template: './bicep/nsg.bicep'
+        failOnStdErr: true
         
     - name: Tag Resources
       uses: azure/arm-deploy@v1
       with:
-        resourceGroupName: 'hub-rg'
-        template: 'resource-tags.bicep'
+        resourceGroupName: ${{ env.RESOURCE_GROUP }}
+        template: './bicep/resource-tags.bicep'
+        failOnStdErr: true
+
+    - name: Deployment Status Check
+      run: |
+        DEPLOYMENTS=$(az deployment group list --resource-group "$RESOURCE_GROUP" --query "[?properties.provisioningState=='Failed']" -o tsv)
+        if [ ! -z "$DEPLOYMENTS" ]; then
+          echo "Failed deployments found in resource group $RESOURCE_GROUP"
+          exit 1
+        fi
