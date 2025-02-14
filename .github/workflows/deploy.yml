@@ -8,10 +8,7 @@ on:
 
 env:
   RESOURCE_GROUP: 'hub-rg'
-
-permissions:
-  id-token: write
-  contents: read
+  LOCATION: 'eastus'
 
 jobs:
   validate-and-deploy:
@@ -24,12 +21,14 @@ jobs:
       uses: azure/login@v1
       with:
         client-id: ${{ secrets.AZURE_CLIENT_ID }}
-        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
         client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
         subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-        enable-AzPSSession: true
-        allow-no-subscriptions: true
-        
+    
+    - name: Create Resource Group
+      run: |
+        az group create --name ${{ env.RESOURCE_GROUP }} --location ${{ env.LOCATION }}
+    
     - name: Deploy Hub VNet
       uses: azure/arm-deploy@v1
       with:
@@ -37,8 +36,7 @@ jobs:
         resourceGroupName: ${{ env.RESOURCE_GROUP }}
         template: './bicep/hub-vnet.bicep'
         deploymentName: 'hub-vnet-deployment'
-        failOnStdErr: false
-        
+    
     - name: Deploy Spoke 1 VNet  
       uses: azure/arm-deploy@v1
       with:
@@ -46,8 +44,7 @@ jobs:
         resourceGroupName: ${{ env.RESOURCE_GROUP }}
         template: './bicep/spoke1-vnet.bicep'
         deploymentName: 'spoke1-vnet-deployment'
-        failOnStdErr: false
-        
+    
     - name: Deploy Spoke 2 VNet
       uses: azure/arm-deploy@v1
       with:
@@ -55,8 +52,7 @@ jobs:
         resourceGroupName: ${{ env.RESOURCE_GROUP }}
         template: './bicep/spoke2-vnet.bicep'
         deploymentName: 'spoke2-vnet-deployment'
-        failOnStdErr: false
-        
+    
     - name: Configure VNet Peering
       uses: azure/arm-deploy@v1
       with:
@@ -64,8 +60,7 @@ jobs:
         resourceGroupName: ${{ env.RESOURCE_GROUP }}
         template: './bicep/vnet-peering.bicep'
         deploymentName: 'vnet-peering-deployment'
-        failOnStdErr: false
-        
+    
     - name: Deploy VPN Gateway
       uses: azure/arm-deploy@v1
       with:
@@ -73,8 +68,7 @@ jobs:
         resourceGroupName: ${{ env.RESOURCE_GROUP }}
         template: './bicep/vpn-gateway.bicep'
         deploymentName: 'vpn-gateway-deployment'
-        failOnStdErr: false
-        
+    
     - name: Configure Azure Bastion
       uses: azure/arm-deploy@v1
       with:
@@ -82,8 +76,7 @@ jobs:
         resourceGroupName: ${{ env.RESOURCE_GROUP }}
         template: './bicep/bastion.bicep'
         deploymentName: 'bastion-deployment'
-        failOnStdErr: false
-        
+    
     - name: Apply Network Security Groups
       uses: azure/arm-deploy@v1
       with:
@@ -91,8 +84,7 @@ jobs:
         resourceGroupName: ${{ env.RESOURCE_GROUP }}
         template: './bicep/nsg.bicep'
         deploymentName: 'nsg-deployment'
-        failOnStdErr: false
-        
+    
     - name: Tag Resources
       uses: azure/arm-deploy@v1
       with:
@@ -100,4 +92,3 @@ jobs:
         resourceGroupName: ${{ env.RESOURCE_GROUP }}
         template: './bicep/resource-tags.bicep'
         deploymentName: 'resource-tags-deployment'
-        failOnStdErr: false
