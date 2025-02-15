@@ -28,6 +28,7 @@ resource hubNSG 'Microsoft.Network/networkSecurityGroups@2021-05-01' = {
           protocol: '*'
           sourceAddressPrefix: '*'
           sourcePortRange: '*'
+          destinationAddressPrefix: '*'
         }
       }
       {
