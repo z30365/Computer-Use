@@ -1,5 +1,16 @@
 param location string = 'eastus'
 
+resource vpnGatewayPublicIP 'Microsoft.Network/publicIPAddresses@2021-05-01' = {
+  name: 'hub-vpn-gateway-ip'
+  location: location
+  sku: {
+    name: 'Standard'
+  }
+  properties: {
+    publicIPAllocationMethod: 'Static'
+  }
+}
+
 resource vpnGateway 'Microsoft.Network/virtualNetworkGateways@2021-05-01' = {
   name: 'hub-vnet-gateway'
   location: location
@@ -17,6 +28,9 @@ resource vpnGateway 'Microsoft.Network/virtualNetworkGateways@2021-05-01' = {
         name: 'default'
         properties: {
           privateIPAllocationMethod: 'Dynamic'
+          publicIPAddress: {
+            id: vpnGatewayPublicIP.id
+          }
           subnet: {
             id: resourceId('Microsoft.Network/virtualNetworks/subnets', 'hub-vnet', 'GatewaySubnet')
           }
