@@ -1,4 +1,3 @@
-param location string = 'eastus'
 param environment string = 'Production'
 param costCenter string = '[Department Code]'
 param application string = '[Application Name]'
