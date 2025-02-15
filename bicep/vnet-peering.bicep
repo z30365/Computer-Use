@@ -1,5 +1,3 @@
-param location string = 'eastus'
-
 resource hubVNetPeering 'Microsoft.Network/virtualNetworks/virtualNetworkPeerings@2021-05-01' = {
   name: 'hub-vnet/peer-to-spoke1'
   properties: {
