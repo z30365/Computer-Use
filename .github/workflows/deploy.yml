@@ -55,14 +55,6 @@ jobs:
         template: './bicep/spoke2-vnet.bicep'
         deploymentName: 'spoke2-vnet-deployment'
     
-    - name: Configure VNet Peering
-      uses: azure/arm-deploy@v1
-      with:
-        scope: resourcegroup
-        resourceGroupName: ${{ env.RESOURCE_GROUP }}
-        template: './bicep/vnet-peering.bicep'
-        deploymentName: 'vnet-peering-deployment'
-    
     - name: Deploy VPN Gateway
       uses: azure/arm-deploy@v1
       with:
@@ -70,6 +62,14 @@ jobs:
         resourceGroupName: ${{ env.RESOURCE_GROUP }}
         template: './bicep/vpn-gateway.bicep'
         deploymentName: 'vpn-gateway-deployment'
+    
+    - name: Configure VNet Peering
+      uses: azure/arm-deploy@v1
+      with:
+        scope: resourcegroup
+        resourceGroupName: ${{ env.RESOURCE_GROUP }}
+        template: './bicep/vnet-peering.bicep'
+        deploymentName: 'vnet-peering-deployment'
     
     - name: Configure Azure Bastion
       uses: azure/arm-deploy@v1
